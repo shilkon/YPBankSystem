@@ -35,7 +35,7 @@ impl<T: TransactionReader, R: std::io::Read> TransactionIter<T, R> {
         TransactionIter{
             reader,
             source: std::io::BufReader::new(source),
-            position: 1
+            position: 0
         }
     }
 

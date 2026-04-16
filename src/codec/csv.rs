@@ -34,7 +34,7 @@ impl TransactionWriter for CsvFormat {
     }
 
     fn write_record<W: std::io::Write>(&self, w: &mut W, tx: &Transaction) -> Result<(), CodecError> {
-        write!(w, "{},{},{},{},{},{},{},{}",
+        writeln!(w, "{},{},{},{},{},{},{},{}",
             tx.tx_id,
             tx.tx_type,
             tx.from_user_id,
@@ -55,23 +55,28 @@ impl TransactionReader for CsvFormat {
         if bytes_read == 0 {
             return Ok(None); // EOF
         }
+        *pos += 1;
         if line.trim_end() != Self::HEADER {
             println!("{}", line);
             println!("{}", Self::HEADER);
             return Err(CodecError::InvalidStructure(*pos))
         }
-        *pos += 1;
 
         Ok(Some(()))
     }
 
     fn read_next<R: std::io::BufRead>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError> {
         let mut line = String::new();
+
+        while line.is_empty() {
+            let bytes_read = r.read_line(&mut line)?;
         
-        let bytes_read = r.read_line(&mut line)?;
-        
-        if bytes_read == 0 {
-            return Ok(None); // EOF
+            if bytes_read == 0 {
+                return Ok(None); // EOF
+            }
+
+            line = line.trim().into();
+            *pos += 1;
         }
 
         let parts: Vec<&str> = line.split(',').collect();
@@ -80,7 +85,6 @@ impl TransactionReader for CsvFormat {
         }
 
         let tx = parse_transaction(&parts).map_err(|e| CodecError::ParseText { source: e, line: *pos })?;
-        *pos += 1;
         
         Ok(Some(tx))
     }

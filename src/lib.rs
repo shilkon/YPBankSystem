@@ -2,7 +2,7 @@ mod transaction;
 mod codec;
 
 pub use transaction::Transaction;
-pub use codec::{TransactionWriter, TransactionReader, TransactionIter, CodecError, ParseTextError, CsvFormat};
+pub use codec::{TransactionWriter, TransactionReader, CodecError, ParseTextError, CsvFormat};
 
 // pub fn add(left: u64, right: u64) -> u64 {
 //     left + right

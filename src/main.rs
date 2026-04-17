@@ -1,7 +1,7 @@
 use std::{env, fs::File, io::{BufWriter, Write}, path::Path};
 
 use anyhow::Context;
-use yp_bank_system::{CsvFormat, TransactionIter, TransactionWriter};
+use yp_bank_system::{CsvFormat, TransactionReader, TransactionWriter};
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -30,16 +30,16 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("Failed to open output file: {}", output_file_path.display().to_string());
     };
 
-    let mut reader_iter = TransactionIter::new(tx_reader, input_file);
-    match reader_iter.read_header().context("Failed to read header")? {
-        Some(_) => (),
-        None => return Ok(())
+    let mut buf_reader = std::io::BufReader::new(input_file);
+    let mut position: usize = 0;
+    if let None = tx_reader.read_header(&mut buf_reader, &mut position).context("Failed to read header")? {
+        return Ok(())
     }
     
     let mut buf_writer = BufWriter::new(output_file);
     tx_writer.write_header(&mut buf_writer).context("Failed to write header")?;
 
-    for tx_record in reader_iter {
+    while let Some(tx_record) = tx_reader.read_next(&mut buf_reader, &mut position).transpose() {
         match tx_record {
             Ok(tx) => {
                 if let Err(e) = tx_writer.write_record(&mut buf_writer, &tx) {

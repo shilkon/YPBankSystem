@@ -23,31 +23,3 @@ pub trait TransactionReader {
 
     fn read_next<R: std::io::BufRead>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError>;
 }
-
-pub struct TransactionIter<T: TransactionReader, R: std::io::Read> {
-    reader: T,
-    source: std::io::BufReader<R>,
-    position: usize
-}
-
-impl<T: TransactionReader, R: std::io::Read> TransactionIter<T, R> {
-    pub fn new(reader: T, source: R) -> Self {
-        TransactionIter{
-            reader,
-            source: std::io::BufReader::new(source),
-            position: 0
-        }
-    }
-
-    pub fn read_header(&mut self) -> Result<Option<()>, CodecError> {
-        self.reader.read_header(&mut self.source, &mut self.position)
-    }
-}
-
-impl<T: TransactionReader, R: std::io::Read> Iterator for TransactionIter<T, R> {
-    type Item = Result<Transaction, CodecError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.reader.read_next(&mut self.source, &mut self.position).transpose()
-    }
-}

@@ -5,28 +5,23 @@ pub enum CodecError {
     #[error("I/O failure: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Failed to parse field {source} at line {line}")]
-    ParseText {
-        source: ParseTextError,
-        line: usize
-    },
+    #[error("Failed to parse field {0}")]
+    ParseText(#[from] ParseTextFieldError),
 
-    #[error("Invalid structure at line {0}")]
-    InvalidStructure(usize),
+    #[error("Invalid structure")]
+    InvalidStructure,
+
+    #[error("Missing field '{0}'")]
+    MissingField(String)
 }
 
 #[derive(Error, Debug)]
-#[error("'{field}': '{value}'")]
-pub struct ParseTextError {
-    field: String,
-    value: String
+#[error("'{key}': '{value}'")]
+pub struct ParseTextFieldError {
+    pub key: String,
+    pub value: String
 }
 
-impl ParseTextError {
-    pub fn new(field: &str, value: &str) -> Self {
-        Self {
-            field: field.into(),
-            value: value.into()
-        }
-    }
-}
+#[derive(Error, Debug)]
+#[error("ParseEnumError")]
+pub struct ParseEnumError;

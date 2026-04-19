@@ -39,12 +39,12 @@ pub trait TransactionReader {
 fn read_next_line<R: std::io::BufRead>(r: &mut R, line: &mut String, pos: &mut usize) -> Result<Option<()>, CodecError> {
     line.clear();
     let bytes_read = r.read_line(line)?;
+    *pos += 1;
         
     if bytes_read == 0 {
         return Ok(None) // EOF
     }
 
-    *pos += 1;
     Ok(Some(()))
 }
 

@@ -1,5 +1,6 @@
 use crate::{CodecError, codec::ParseEnumError};
 
+#[derive(PartialEq, Eq)]
 pub struct Transaction {
     pub tx_id: i64,
     pub tx_type: TransactionType,
@@ -11,14 +12,14 @@ pub struct Transaction {
     pub description: String
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum TransactionType {
     Deposit,
     Transfer,
     Withdraw
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum TransactionStatus {
     Success,
     Failure,
@@ -91,16 +92,16 @@ impl std::str::FromStr for TransactionStatus {
 
 impl std::fmt::Display for Transaction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "TX_ID: {}\nTX_TYPE: {}\nFROM_USER_ID: {}\nTO_USER_ID: {}\n\
-                AMOUNT: {}\nTIMESTAMP: {}\nSTATUS: {}\nDESCRIPTION: {}",
-            self.tx_id,
-            self.tx_type,
-            self.from_user_id,
-            self.to_user_id,
-            self.amount,
-            self.timestamp,
-            self.status,
-            self.description
+        write!(f, "'{}': '{}', '{}': '{}', '{}': '{}', '{}': '{}', \
+                '{}': '{}', '{}': '{}', '{}': '{}', '{}': '{}'",
+                Transaction::TX_ID_NAME, self.tx_id,
+                Transaction::TX_TYPE_NAME, self.tx_type,
+                Transaction::FROM_USER_ID_NAME, self.from_user_id,
+                Transaction::TO_USER_ID_NAME, self.to_user_id,
+                Transaction::AMOUNT_NAME, self.amount,
+                Transaction::TIMESTAMP_NAME, self.timestamp,
+                Transaction::TIMESTAMP_NAME, self.status,
+                Transaction::DESCRIPTION_NAME, self.description
         )
     }
 }

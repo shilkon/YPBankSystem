@@ -1,6 +1,6 @@
 use std::{env, fs::File, path::Path};
 
-use yp_bank_system::{Format, CsvFormat, TxtFormat, TransactionReader, TransactionWriter};
+use yp_bank_system::{Format, CsvFormat, TxtFormat, TransactionReader};
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -32,14 +32,14 @@ fn main() -> anyhow::Result<()> {
     let mut first_buf_reader = std::io::BufReader::new(first_file);
     let mut first_position: usize = 0;
     if let None = first_tx_reader.read_header(&mut first_buf_reader, &mut first_position)
-        .map_err(|e| anyhow::anyhow!("Failed to read header from {} : {}", first_file_path.display().to_string(), e))? {
+        .map_err(|e| anyhow::anyhow!("Failed to read header from '{}' : {}", first_file_path.display().to_string(), e))? {
         return Ok(())
     }
 
     let mut second_buf_reader = std::io::BufReader::new(second_file);
     let mut second_position: usize = 0;
     if let None = second_tx_reader.read_header(&mut second_buf_reader, &mut second_position)
-        .map_err(|e| anyhow::anyhow!("Failed to read header from {} : {}", second_file_path.display().to_string(), e))? {
+        .map_err(|e| anyhow::anyhow!("Failed to read header from '{}' : {}", second_file_path.display().to_string(), e))? {
         return Ok(())
     }
 
@@ -49,7 +49,29 @@ fn main() -> anyhow::Result<()> {
             .map_err(|e| anyhow::anyhow!("Failed to read transaction from {first_file_name} at line {first_position} : {e}"))?;
         let second_tx_record = second_tx_reader.read_next(&mut second_buf_reader, &mut second_position)
             .map_err(|e| anyhow::anyhow!("Failed to read transaction from {second_file_name} at line {second_position} : {e}"))?;
-        // TODO: compare
+        match (first_tx_record, second_tx_record) {
+            (Some(first_tx), Some(second_tx)) => {
+                if first_tx != second_tx {
+                    are_identical = false;
+                    println!("Found different transactions\nTransaction from '{}' at line {}: {}\nTransaction from '{}' at line {}: {}",
+                        first_file_path.display().to_string(), first_position, first_tx,
+                        second_file_path.display().to_string(), second_position, second_tx);
+                }
+            }
+            (Some(first_tx), None) => {
+                are_identical = false;
+                println!("Found different transactions\nTransaction from '{}' at line {}: {}\nTransaction from '{}' at line {}: missed",
+                        first_file_path.display().to_string(), first_position, first_tx,
+                        second_file_path.display().to_string(), second_position);
+            }
+            (None, Some(second_tx)) => {
+                are_identical = false;
+                println!("Found different transactions\nTransaction from '{}' at line {}: missed\nTransaction from '{}' at line {}: {}",
+                        first_file_path.display().to_string(), first_position,
+                        second_file_path.display().to_string(), second_position, second_tx);
+            }
+            (None, None) => break
+        }
     }
 
     if are_identical {

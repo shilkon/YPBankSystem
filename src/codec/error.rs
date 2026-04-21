@@ -5,23 +5,29 @@ pub enum CodecError {
     #[error("I/O failure: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Failed to parse field {0}")]
-    ParseText(#[from] ParseTextFieldError),
+    #[error("Invalid format: {0}")]
+    Format(String),
 
     #[error("Invalid structure")]
     InvalidStructure,
-
-    #[error("Missing field '{0}'")]
-    MissingField(String)
 }
 
-#[derive(Error, Debug)]
-#[error("'{key}': '{value}'")]
-pub struct ParseTextFieldError {
-    pub key: String,
-    pub value: String
+impl From<csv::Error> for CodecError {
+    fn from(err: csv::Error) -> Self {
+        match err.into_kind() {
+            csv::ErrorKind::Io(e) => {
+                CodecError::Io(e)
+            }
+            csv::ErrorKind::Deserialize { err, .. } => {
+                CodecError::Format(err.to_string())
+            }
+            _ => CodecError::InvalidStructure,
+        }
+    }
 }
 
-#[derive(Error, Debug)]
-#[error("ParseEnumError")]
-pub struct ParseEnumError;
+impl From<yaml_serde::Error> for CodecError {
+    fn from(err: yaml_serde::Error) -> Self {
+        CodecError::Format(err.to_string())
+    }
+}

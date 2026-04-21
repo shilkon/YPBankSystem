@@ -1,6 +1,7 @@
-use crate::{CodecError, codec::ParseEnumError};
+use serde::{Serialize, Deserialize};
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub struct Transaction {
     pub tx_id: i64,
     pub tx_type: TransactionType,
@@ -12,14 +13,16 @@ pub struct Transaction {
     pub description: String
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum TransactionType {
     Deposit,
     Transfer,
-    Withdraw
+    Withdrawal
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum TransactionStatus {
     Success,
     Failure,
@@ -35,58 +38,18 @@ impl Transaction {
     pub const TIMESTAMP_NAME: &str = "TIMESTAMP";
     pub const STATUS_NAME: &str = "STATUS";
     pub const DESCRIPTION_NAME: &str = "DESCRIPTION";
-}
 
-#[derive(Default)]
-pub struct TransactionBuilder {
-    pub tx_id: Option<i64>,
-    pub tx_type: Option<TransactionType>,
-    pub from_user_id: Option<i64>,
-    pub to_user_id: Option<i64>,
-    pub amount: Option<i64>,
-    pub timestamp: Option<i64>,
-    pub status: Option<TransactionStatus>,
-    pub description: Option<String>
-}
-
-impl TransactionBuilder {
-    pub fn build(self) -> Result<Transaction, CodecError> {
-        Ok(Transaction {
-            tx_id: self.tx_id.ok_or(CodecError::MissingField(Transaction::TX_ID_NAME.into()))?,
-            tx_type: self.tx_type.ok_or(CodecError::MissingField(Transaction::TX_TYPE_NAME.into()))?,
-            from_user_id: self.from_user_id.ok_or(CodecError::MissingField(Transaction::FROM_USER_ID_NAME.into()))?,
-            to_user_id: self.to_user_id.ok_or(CodecError::MissingField(Transaction::TO_USER_ID_NAME.into()))?,
-            amount: self.amount.ok_or(CodecError::MissingField(Transaction::AMOUNT_NAME.into()))?,
-            timestamp: self.timestamp.ok_or(CodecError::MissingField(Transaction::TIMESTAMP_NAME.into()))?,
-            status: self.status.ok_or(CodecError::MissingField(Transaction::STATUS_NAME.into()))?,
-            description: self.description.ok_or(CodecError::MissingField(Transaction::DESCRIPTION_NAME.into()))?,
-        })
-    }
-}
-
-impl std::str::FromStr for TransactionType {
-    type Err = ParseEnumError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "DEPOSIT" => Ok(TransactionType::Deposit),
-            "TRANSFER" => Ok(TransactionType::Transfer),
-            "WITHDRAWAL" => Ok(TransactionType::Withdraw),
-            _ => Err(ParseEnumError)
-        }
-    }
-}
-
-impl std::str::FromStr for TransactionStatus {
-    type Err = ParseEnumError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "SUCCESS" => Ok(TransactionStatus::Success),
-            "FAILURE" => Ok(TransactionStatus::Failure),
-            "PENDING" => Ok(TransactionStatus::Pending),
-            _ => Err(ParseEnumError)
-        }
+    pub fn csv_header() -> String {
+        format!("{},{},{},{},{},{},{},{}",
+            Transaction::TX_ID_NAME,
+            Transaction::TX_TYPE_NAME,
+            Transaction::FROM_USER_ID_NAME,
+            Transaction::TO_USER_ID_NAME,
+            Transaction::AMOUNT_NAME,
+            Transaction::TIMESTAMP_NAME,
+            Transaction::TIMESTAMP_NAME,
+            Transaction::DESCRIPTION_NAME,
+        )
     }
 }
 
@@ -111,7 +74,7 @@ impl std::fmt::Display for TransactionType {
         write!(f, "{}", match self {
             TransactionType::Deposit => "DEPOSIT",
             TransactionType::Transfer => "TRANSFER",
-            TransactionType::Withdraw => "WITHDRAWAL"
+            TransactionType::Withdrawal => "WITHDRAWAL"
         })
     }
 }

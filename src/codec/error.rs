@@ -15,9 +15,7 @@ pub enum CodecError {
 impl From<csv::Error> for CodecError {
     fn from(err: csv::Error) -> Self {
         match err.into_kind() {
-            csv::ErrorKind::Io(e) => {
-                CodecError::Io(e)
-            }
+            csv::ErrorKind::Io(e) => CodecError::Io(e),
             csv::ErrorKind::Deserialize { err, .. } => {
                 CodecError::Format(err.to_string())
             }
@@ -26,8 +24,23 @@ impl From<csv::Error> for CodecError {
     }
 }
 
-impl From<yaml_serde::Error> for CodecError {
-    fn from(err: yaml_serde::Error) -> Self {
+impl From<serde_json::Error> for CodecError {
+    fn from(err: serde_json::Error) -> Self {
+        CodecError::Format(err.to_string())
+    }
+}
+
+impl From<binrw::Error> for CodecError {
+    fn from(err: binrw::Error) -> Self {
+        match err {
+            binrw::Error::Io(e) => CodecError::Io(e),
+            _ => CodecError::Format(err.to_string())
+        }
+    }
+}
+
+impl From<std::string::FromUtf8Error> for CodecError {
+    fn from(err: std::string::FromUtf8Error) -> Self {
         CodecError::Format(err.to_string())
     }
 }

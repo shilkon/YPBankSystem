@@ -3,14 +3,14 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub struct Transaction {
-    pub tx_id: i64,
-    pub tx_type: TransactionType,
-    pub from_user_id: i64,
-    pub to_user_id: i64,
-    pub amount: i64,
-    pub timestamp: i64,
-    pub status: TransactionStatus,
-    pub description: String
+    tx_id: i64,
+    tx_type: TransactionType,
+    from_user_id: i64,
+    to_user_id: i64,
+    amount: i64,
+    timestamp: i64,
+    status: TransactionStatus,
+    description: String
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,9 +47,46 @@ impl Transaction {
             Transaction::TO_USER_ID_NAME,
             Transaction::AMOUNT_NAME,
             Transaction::TIMESTAMP_NAME,
-            Transaction::TIMESTAMP_NAME,
+            Transaction::STATUS_NAME,
             Transaction::DESCRIPTION_NAME,
         )
+    }
+
+    pub fn new(tx_id: i64, tx_type: TransactionType, from_user_id: i64, to_user_id: i64,
+               amount: i64, timestamp: i64, status: TransactionStatus, description: String) -> Self {
+        Transaction { tx_id, tx_type, from_user_id, to_user_id, amount, timestamp, status, description }
+    }
+
+    pub fn get_tx_id(&self) -> i64 {
+        self.tx_id
+    }
+
+    pub fn get_tx_type(&self) -> TransactionType {
+        self.tx_type
+    }
+
+    pub fn get_from_user_id(&self) -> i64 {
+        self.from_user_id
+    }
+
+    pub fn get_to_user_id(&self) -> i64 {
+        self.to_user_id
+    }
+
+    pub fn get_amount(&self) -> i64 {
+        self.amount
+    }
+
+    pub fn get_timestamp(&self) -> i64 {
+        self.timestamp
+    }
+
+    pub fn get_status(&self) -> TransactionStatus {
+        self.status
+    }
+
+    pub fn get_description(&self) -> String {
+        self.description.clone()
     }
 }
 
@@ -63,7 +100,7 @@ impl std::fmt::Display for Transaction {
                 Transaction::TO_USER_ID_NAME, self.to_user_id,
                 Transaction::AMOUNT_NAME, self.amount,
                 Transaction::TIMESTAMP_NAME, self.timestamp,
-                Transaction::TIMESTAMP_NAME, self.status,
+                Transaction::STATUS_NAME, self.status,
                 Transaction::DESCRIPTION_NAME, self.description
         )
     }

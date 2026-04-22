@@ -1,11 +1,12 @@
 mod error;
 mod csv;
 mod txt;
+mod bin;
 
 pub use self::error::CodecError;
-pub use self::{csv::CsvFormat, txt::TxtFormat};
+pub use self::{csv::CsvFormat, txt::TxtFormat, bin::BinFormat};
 
-use crate::transaction::Transaction;
+use crate::transaction::{Transaction, TransactionType, TransactionStatus};
 
 use enum_dispatch::enum_dispatch;
 
@@ -13,7 +14,8 @@ use enum_dispatch::enum_dispatch;
 #[enum_dispatch(TransactionReader)]
 pub enum Format {
     Csv(CsvFormat),
-    Txt(TxtFormat)
+    Txt(TxtFormat),
+    Bin(BinFormat)
 }
 
 #[enum_dispatch]

@@ -8,7 +8,8 @@ pub use codec::{
     CodecError,
     Format,
     CsvFormat,
-    TxtFormat
+    TxtFormat,
+    BinFormat
 };
 
 // pub fn add(left: u64, right: u64) -> u64 {

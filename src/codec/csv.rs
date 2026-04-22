@@ -5,7 +5,6 @@ use super::{
     CodecError,
 };
 
-#[derive(Copy, Clone)]
 pub struct CsvFormat;
 
 impl TransactionWriter for CsvFormat {
@@ -18,6 +17,7 @@ impl TransactionWriter for CsvFormat {
     fn write_record<W: std::io::Write>(&self, w: &mut W, tx: &Transaction) -> Result<(), CodecError> {
         let mut wtr = csv::WriterBuilder::new()
             .has_headers(false)
+            .quote_style(csv::QuoteStyle::Never)
             .from_writer(w);
         wtr.serialize(tx)?;
         wtr.flush()?;
@@ -50,6 +50,7 @@ impl TransactionReader for CsvFormat {
 
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(false)
+            .quoting(false)
             .from_reader(clean_line.as_bytes());
         Ok(rdr.deserialize::<Transaction>().next().transpose()?)
     }

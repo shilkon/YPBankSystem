@@ -1,6 +1,6 @@
 use std::{env, fs::File, io::{BufWriter, Write}, path::Path};
 
-use yp_bank_system::{Format, CsvFormat, TxtFormat, TransactionReader, TransactionWriter};
+use yp_bank_system::{Format, CsvFormat, TxtFormat, BinFormat, TransactionReader, TransactionWriter};
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -12,6 +12,7 @@ fn main() -> anyhow::Result<()> {
     let match_format = |path: &Path| match path.extension().and_then(|s| s.to_str()) {
         Some("csv") => Ok(Format::Csv(CsvFormat)),
         Some("txt") => Ok(Format::Txt(TxtFormat)),
+        Some("bin") => Ok(Format::Bin(BinFormat)),
         _ => Err(anyhow::anyhow!("Unsupported file format: '{}'", path.display().to_string())),
     };
 
@@ -47,7 +48,7 @@ fn main() -> anyhow::Result<()> {
                     anyhow::bail!("Failed to write transaction:\n{tx}\nError: {e}")
                 }
             }
-            Err(e) => anyhow::bail!("Failed to read transaction at line {position}: {e}")
+            Err(e) => anyhow::bail!("Failed to read transaction at line/position {position}: {e}")
         }
     }
 

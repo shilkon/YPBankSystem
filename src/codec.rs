@@ -10,8 +10,7 @@ use crate::transaction::{Transaction, TransactionType, TransactionStatus};
 
 use enum_dispatch::enum_dispatch;
 
-#[enum_dispatch(TransactionWriter)]
-#[enum_dispatch(TransactionReader)]
+#[enum_dispatch(TransactionWriter, TransactionReader)]
 pub enum Format {
     Csv(CsvFormat),
     Txt(TxtFormat),

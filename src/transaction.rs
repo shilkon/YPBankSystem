@@ -57,36 +57,36 @@ impl Transaction {
         Transaction { tx_id, tx_type, from_user_id, to_user_id, amount, timestamp, status, description }
     }
 
-    pub fn get_tx_id(&self) -> i64 {
+    pub fn tx_id(&self) -> i64 {
         self.tx_id
     }
 
-    pub fn get_tx_type(&self) -> TransactionType {
+    pub fn tx_type(&self) -> TransactionType {
         self.tx_type
     }
 
-    pub fn get_from_user_id(&self) -> i64 {
+    pub fn from_user_id(&self) -> i64 {
         self.from_user_id
     }
 
-    pub fn get_to_user_id(&self) -> i64 {
+    pub fn to_user_id(&self) -> i64 {
         self.to_user_id
     }
 
-    pub fn get_amount(&self) -> i64 {
+    pub fn amount(&self) -> i64 {
         self.amount
     }
 
-    pub fn get_timestamp(&self) -> i64 {
+    pub fn timestamp(&self) -> i64 {
         self.timestamp
     }
 
-    pub fn get_status(&self) -> TransactionStatus {
+    pub fn status(&self) -> TransactionStatus {
         self.status
     }
 
-    pub fn get_description(&self) -> String {
-        self.description.clone()
+    pub fn description(&self) -> &str {
+        self.description.as_str()
     }
 }
 

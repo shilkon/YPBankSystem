@@ -50,7 +50,7 @@ impl TransactionReader for TxtFormat {
             }
 
             if let None = read_next_line(r, &mut line, pos)? {
-                return Ok(None); // EOF
+                break;
             }
             clean_line = line.trim();
         }

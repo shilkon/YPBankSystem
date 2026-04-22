@@ -1,5 +1,6 @@
 use std::{env, fs::File, io::{BufWriter, Write}, path::Path};
 
+use anyhow::Context;
 use yp_bank_system::{Format, CsvFormat, TxtFormat, BinFormat, TransactionReader, TransactionWriter};
 
 fn main() -> anyhow::Result<()> {
@@ -22,24 +23,22 @@ fn main() -> anyhow::Result<()> {
     let output_file_path = Path::new(&args[1]);
     let tx_writer = match_format(output_file_path)?;
 
-    let Ok(input_file) = File::open(input_file_path) else {
-        anyhow::bail!("Failed to open input file '{}'", input_file_path.display().to_string());
-    };
+    let input_file = File::open(input_file_path)
+        .context(format!("Failed to open input file '{}'", input_file_path.display().to_string()))?;
 
-    let Ok(output_file) = File::create(output_file_path) else {
-        anyhow::bail!("Failed to create output file '{}'", output_file_path.display().to_string());
-    };
+    let output_file = File::create(output_file_path)
+        .context(format!("Failed to create output file '{}'", output_file_path.display().to_string()))?;
 
     let mut buf_reader = std::io::BufReader::new(input_file);
     let mut position: usize = 0;
     if let None = tx_reader.read_header(&mut buf_reader, &mut position)
-        .map_err(|e| anyhow::anyhow!("Failed to read header from '{}' : {}", input_file_path.display().to_string(), e))? {
+        .context(format!("Failed to read header from '{}'", input_file_path.display().to_string()))? {
         return Ok(())
     }
     
     let mut buf_writer = BufWriter::new(output_file);
     tx_writer.write_header(&mut buf_writer)
-        .map_err(|e| anyhow::anyhow!("Failed to write header to '{}' : {}", output_file_path.display().to_string(), e))?;
+        .context(format!("Failed to write header to '{}'", output_file_path.display().to_string()))?;
 
     while let Some(tx_record) = tx_reader.read_next(&mut buf_reader, &mut position).transpose() {
         match tx_record {

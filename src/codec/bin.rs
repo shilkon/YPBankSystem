@@ -38,16 +38,16 @@ struct BinTransaction {
 
 impl From<&Transaction> for BinTransaction {
     fn from(tx: &Transaction) -> Self {
-        let description = tx.get_description();
+        let description = tx.description();
         BinTransaction {
-            tx_id: tx.get_tx_id(),
-            tx_type: tx.get_tx_type() as u8,
-            from_user_id: tx.get_from_user_id(),
-            to_user_id: tx.get_to_user_id(),
-            amount: tx.get_amount(),
-            timestamp: tx.get_timestamp(),
-            status: tx.get_status() as u8,
-            description: description.into_bytes()
+            tx_id: tx.tx_id(),
+            tx_type: tx.tx_type() as u8,
+            from_user_id: tx.from_user_id(),
+            to_user_id: tx.to_user_id(),
+            amount: tx.amount(),
+            timestamp: tx.timestamp(),
+            status: tx.status() as u8,
+            description: description.as_bytes().to_vec(),
         }
     }
 }

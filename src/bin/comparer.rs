@@ -1,7 +1,7 @@
 use std::{env, fs::File, path::Path};
 
 use anyhow::Context;
-use yp_bank_system::{Format, CsvFormat, TxtFormat, BinFormat, TransactionReader};
+use parser::{Format, CsvFormat, TxtFormat, BinFormat, TransactionReader};
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();

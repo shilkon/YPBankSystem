@@ -1,13 +1,13 @@
 use std::{env, fs::File, io::{BufWriter, Write}, path::Path};
 
 use anyhow::Context;
-use yp_bank_system::{Format, CsvFormat, TxtFormat, BinFormat, TransactionReader, TransactionWriter};
+use parser::{Format, CsvFormat, TxtFormat, BinFormat, TransactionReader, TransactionWriter};
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.len() != 2 {
-        anyhow::bail!("Usage: yp_bank_system <input_file> <output_file>");
+        anyhow::bail!("Usage: converter <input_file> <output_file>");
     }
 
     let match_format = |path: &Path| match path.extension().and_then(|s| s.to_str()) {

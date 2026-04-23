@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+/// Общий тип ошибок при кодировании и декодировании транзакции в различных форматах
 #[derive(Error, Debug)]
 pub enum CodecError {
     #[error("I/O failure: {0}")]

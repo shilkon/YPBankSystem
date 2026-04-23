@@ -10,6 +10,7 @@ use crate::transaction::{Transaction, TransactionType, TransactionStatus};
 
 use enum_dispatch::enum_dispatch;
 
+/// Формат кодирования транзакций
 #[enum_dispatch(TransactionWriter, TransactionReader)]
 pub enum Format {
     Csv(CsvFormat),
@@ -17,6 +18,7 @@ pub enum Format {
     Bin(BinFormat)
 }
 
+/// Трейт для потоковой записи одной транзакции.
 #[enum_dispatch]
 pub trait TransactionWriter {
     fn write_header<W: std::io::Write>(&self, _: &mut W) -> Result<(), CodecError> {
@@ -26,6 +28,8 @@ pub trait TransactionWriter {
     fn write_record<W: std::io::Write>(&self, w: &mut W, tx: &Transaction) -> Result<(), CodecError>;
 }
 
+/// Трейт для потокового чтения одной транзакции.
+/// Последний параметр `pos` позволяет отслеживать строку/позицию чтения в читаемом объекте.
 #[enum_dispatch]
 pub trait TransactionReader {
     fn read_header<R: std::io::BufRead>(&self, _: &mut R, _: &mut usize) -> Result<Option<()>, CodecError> {

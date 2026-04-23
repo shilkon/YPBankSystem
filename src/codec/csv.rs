@@ -5,6 +5,8 @@ use super::{
     CodecError,
 };
 
+/// CSV-формат кодирования транзакций.
+/// Реализует чтение и запись транзакции в соответствии со спецификацией YPBankCsv.
 pub struct CsvFormat;
 
 impl TransactionWriter for CsvFormat {
@@ -28,7 +30,7 @@ impl TransactionWriter for CsvFormat {
 impl TransactionReader for CsvFormat {
     fn read_header<R: std::io::BufRead>(&self, r: &mut R, pos: &mut usize) -> Result<Option<()>, CodecError> {
         let mut line = String::new();
-        if let None = read_next_line(r, &mut line, pos)? {
+        if read_next_line(r, &mut line, pos)?.is_none() {
             return Ok(None); // EOF
         }
         if line.trim() != Transaction::csv_header() {
@@ -42,7 +44,7 @@ impl TransactionReader for CsvFormat {
         let mut line = String::new();
         let mut clean_line = line.trim();
         while clean_line.is_empty() {
-            if let None = read_next_line(r, &mut line, pos)? {
+            if read_next_line(r, &mut line, pos)?.is_none() {
                 return Ok(None); // EOF
             }
             clean_line = line.trim();

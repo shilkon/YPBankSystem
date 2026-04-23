@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::codec::ParseEnumError;
 
+/// Представление банковской операции (транзакции)
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub struct Transaction {

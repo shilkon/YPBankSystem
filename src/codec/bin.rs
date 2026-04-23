@@ -9,6 +9,8 @@ use super::{
     CodecError,
 };
 
+/// Бинарный формат кодирования транзакций.
+/// Реализует чтение и запись транзакции в соответствии со спецификацией YPBankBin.
 pub struct BinFormat;
 
 impl BinFormat {
@@ -134,7 +136,7 @@ impl TransactionReader for BinFormat {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Cursor, Write, Read};
+    use std::io::Cursor;
 
     use crate::transaction::{TransactionStatus, TransactionType};
 

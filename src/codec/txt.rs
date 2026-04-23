@@ -7,6 +7,8 @@ use super::{
     CodecError
 };
 
+/// Текстовый формат кодирования транзакций.
+/// Реализует чтение и запись транзакции в соответствии со спецификацией YPBankTxt.
 pub struct TxtFormat;
 
 fn parse_field<T: std::str::FromStr>(map: &HashMap<String, String>, key: &str) -> Result<T, CodecError> {
@@ -47,7 +49,7 @@ impl TransactionReader for TxtFormat {
         let mut line = String::new();
         let mut clean_line = line.trim();
         while clean_line.is_empty() || clean_line.starts_with('#') {
-            if let None = read_next_line(r, &mut line, pos)? {
+            if read_next_line(r, &mut line, pos)?.is_none() {
                 return Ok(None); // EOF
             }
             clean_line = line.trim();
@@ -56,13 +58,12 @@ impl TransactionReader for TxtFormat {
         let mut block = HashMap::new();
 
         while !clean_line.is_empty() {
-            if !clean_line.starts_with('#') {
-                if let Some((key, value)) = clean_line.split_once(':') {
-                    block.insert(key.trim().to_string(), value.trim().to_string());
-                }
+            if !clean_line.starts_with('#') && 
+                let Some((key, value)) = clean_line.split_once(':') {
+                block.insert(key.trim().to_string(), value.trim().to_string());
             }
 
-            if let None = read_next_line(r, &mut line, pos)? {
+            if read_next_line(r, &mut line, pos)?.is_none() {
                 break;
             }
             clean_line = line.trim();

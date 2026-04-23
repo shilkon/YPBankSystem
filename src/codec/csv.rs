@@ -55,3 +55,60 @@ impl TransactionReader for CsvFormat {
         Ok(rdr.deserialize::<Transaction>().next().transpose()?)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Cursor, Write, Read};
+
+    use crate::transaction::{TransactionStatus, TransactionType};
+
+    use super::*;
+
+    #[test]
+    fn read() -> Result<(), CodecError> {
+        let tx1 = Transaction::new(1000000000000007, TransactionType::Transfer, 9223372036854775807, 7524637015105340931,
+            800, 1633037280000, TransactionStatus::Pending, "\"Record number 8\"".into());
+        let tx2 = Transaction::new(1000000000000033, TransactionType::Deposit, 0, 9223372036854775807,
+            3400, 1633038840000, TransactionStatus::Failure, "\"Record number 34\"".into());
+
+        let mut buf = Cursor::new(Vec::new());
+        writeln!(buf, "{}", Transaction::csv_header())?;
+        writeln!(buf, "1000000000000007,TRANSFER,9223372036854775807,7524637015105340931,800,1633037280000,PENDING,\"Record number 8\"")?;
+        writeln!(buf, "1000000000000033,DEPOSIT,0,9223372036854775807,3400,1633038840000,FAILURE,\"Record number 34\"")?;
+
+        buf.set_position(0);
+        let mut pos = 0;
+        CsvFormat.read_header(&mut buf, &mut pos)?;
+
+        assert_eq!(Some(tx1), CsvFormat.read_next(&mut buf, &mut pos)?);
+        assert_eq!(Some(tx2), CsvFormat.read_next(&mut buf, &mut pos)?);
+        assert_eq!(None, CsvFormat.read_next(&mut buf, &mut pos)?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn write() -> Result<(), CodecError> {
+        let tx1 = Transaction::new(1000000000000007, TransactionType::Transfer, 9223372036854775807, 7524637015105340931,
+            800, 1633037280000, TransactionStatus::Pending, "\"Record number 8\"".into());
+        let tx2 = Transaction::new(1000000000000033, TransactionType::Deposit, 0, 9223372036854775807,
+            3400, 1633038840000, TransactionStatus::Failure, "\"Record number 34\"".into());
+
+        let mut buf = Cursor::new(Vec::new());
+        CsvFormat.write_header(&mut buf)?;
+        assert_eq!((), CsvFormat.write_record(&mut buf, &tx1)?);
+        assert_eq!((), CsvFormat.write_record(&mut buf, &tx2)?);
+
+        buf.set_position(0);
+        let mut written = String::new();
+        buf.read_to_string(&mut written)?;
+
+        let expected = Transaction::csv_header() +
+            "\n1000000000000007,TRANSFER,9223372036854775807,7524637015105340931,800,1633037280000,PENDING,\"Record number 8\"" +
+            "\n1000000000000033,DEPOSIT,0,9223372036854775807,3400,1633038840000,FAILURE,\"Record number 34\"\n";
+
+        assert_eq!(expected, written);
+
+        Ok(())
+    }
+}

@@ -3,7 +3,7 @@ mod csv;
 mod txt;
 mod bin;
 
-pub use self::error::CodecError;
+pub use self::error::{CodecError, ParseEnumError};
 pub use self::{csv::CsvFormat, txt::TxtFormat, bin::BinFormat};
 
 use crate::transaction::{Transaction, TransactionType, TransactionStatus};

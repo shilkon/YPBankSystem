@@ -56,8 +56,8 @@ fn main() -> anyhow::Result<()> {
                 if first_tx != second_tx {
                     are_identical = false;
                     println!("Found different transactions\n\
-                        Transaction from '{}' at line/position {}: {}\n\
-                        Transaction from '{}' at line/position {}: {}",
+                        Transaction from '{}' at line/position {}:\n{}\n\
+                        Transaction from '{}' at line/position {}:\n{}",
                         first_file_path.display().to_string(), first_position, first_tx,
                         second_file_path.display().to_string(), second_position, second_tx);
                 }
@@ -65,7 +65,7 @@ fn main() -> anyhow::Result<()> {
             (Some(first_tx), None) => {
                 are_identical = false;
                 println!("Found different transactions\n\
-                        Transaction from '{}' at line/position {}: {}\n\
+                        Transaction from '{}' at line/position {}:\n{}\n\
                         Transaction from '{}' at line/position {}: missed",
                         first_file_path.display().to_string(), first_position, first_tx,
                         second_file_path.display().to_string(), second_position);
@@ -74,7 +74,7 @@ fn main() -> anyhow::Result<()> {
                 are_identical = false;
                 println!("Found different transactions\n\
                         Transaction from '{}' at line/position {}: missed\n\
-                        Transaction from '{}' at line/position {}: {}",
+                        Transaction from '{}' at line/position {}:\n{}",
                         first_file_path.display().to_string(), first_position,
                         second_file_path.display().to_string(), second_position, second_tx);
             }

@@ -12,6 +12,10 @@ pub enum CodecError {
     InvalidStructure,
 }
 
+#[derive(Error, Debug)]
+#[error("ParseEnumError")]
+pub struct ParseEnumError;
+
 impl From<csv::Error> for CodecError {
     fn from(err: csv::Error) -> Self {
         match err.into_kind() {
@@ -21,12 +25,6 @@ impl From<csv::Error> for CodecError {
             }
             _ => CodecError::InvalidStructure,
         }
-    }
-}
-
-impl From<serde_json::Error> for CodecError {
-    fn from(err: serde_json::Error) -> Self {
-        CodecError::Format(err.to_string())
     }
 }
 

@@ -131,3 +131,35 @@ impl TransactionReader for BinFormat {
         Ok(Some(bin_tx.try_into()?))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Cursor, Write, Read};
+
+    use crate::transaction::{TransactionStatus, TransactionType};
+
+    use super::*;
+
+    #[test]
+    fn write_read() -> Result<(), CodecError> {
+        let tx1 = Transaction::new(1000000000000007, TransactionType::Transfer, 9223372036854775807, 7524637015105340931,
+            800, 1633037280000, TransactionStatus::Pending, "\"Record number 8\"".into());
+        let tx2 = Transaction::new(1000000000000033, TransactionType::Deposit, 0, 9223372036854775807,
+            3400, 1633038840000, TransactionStatus::Failure, "\"Record number 34\"".into());
+
+        let mut buf = Cursor::new(Vec::new());
+        BinFormat.write_header(&mut buf)?;
+        BinFormat.write_record(&mut buf, &tx1)?;
+        BinFormat.write_record(&mut buf, &tx2)?;
+
+        buf.set_position(0);
+        let mut pos = 0;
+        BinFormat.read_header(&mut buf, &mut pos)?;
+
+        assert_eq!(Some(tx1), BinFormat.read_next(&mut buf, &mut pos)?);
+        assert_eq!(Some(tx2), BinFormat.read_next(&mut buf, &mut pos)?);
+        assert_eq!(None, BinFormat.read_next(&mut buf, &mut pos)?);
+
+        Ok(())
+    }
+}

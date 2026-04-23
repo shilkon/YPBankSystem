@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+use crate::codec::ParseEnumError;
+
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub struct Transaction {
@@ -92,8 +94,7 @@ impl Transaction {
 
 impl std::fmt::Display for Transaction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "'{}': '{}', '{}': '{}', '{}': '{}', '{}': '{}', \
-                '{}': '{}', '{}': '{}', '{}': '{}', '{}': '{}'",
+        write!(f, "{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}\n{}: {}",
                 Transaction::TX_ID_NAME, self.tx_id,
                 Transaction::TX_TYPE_NAME, self.tx_type,
                 Transaction::FROM_USER_ID_NAME, self.from_user_id,
@@ -123,5 +124,31 @@ impl std::fmt::Display for TransactionStatus {
             TransactionStatus::Failure => "FAILURE",
             TransactionStatus::Pending => "PENDING"
         })
+    }
+}
+
+impl std::str::FromStr for TransactionType {
+    type Err = ParseEnumError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "DEPOSIT" => Ok(TransactionType::Deposit),
+            "TRANSFER" => Ok(TransactionType::Transfer),
+            "WITHDRAWAL" => Ok(TransactionType::Withdrawal),
+            _ => Err(ParseEnumError)
+        }
+    }
+}
+
+impl std::str::FromStr for TransactionStatus {
+    type Err = ParseEnumError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "SUCCESS" => Ok(TransactionStatus::Success),
+            "FAILURE" => Ok(TransactionStatus::Failure),
+            "PENDING" => Ok(TransactionStatus::Pending),
+            _ => Err(ParseEnumError)
+        }
     }
 }

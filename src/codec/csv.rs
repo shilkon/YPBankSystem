@@ -28,7 +28,7 @@ impl TransactionWriter for CsvFormat {
 }
 
 impl TransactionReader for CsvFormat {
-    fn read_header<R: std::io::BufRead>(&self, r: &mut R, pos: &mut usize) -> Result<Option<()>, CodecError> {
+    fn read_header<R: std::io::BufRead + ?Sized>(&self, r: &mut R, pos: &mut usize) -> Result<Option<()>, CodecError> {
         let mut line = String::new();
         if read_next_line(r, &mut line, pos)?.is_none() {
             return Ok(None); // EOF
@@ -40,7 +40,7 @@ impl TransactionReader for CsvFormat {
         Ok(Some(()))
     }
 
-    fn read_next<R: std::io::BufRead>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError> {
+    fn read_next<R: std::io::BufRead + ?Sized>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError> {
         let mut line = String::new();
         let mut clean_line = line.trim();
         while clean_line.is_empty() {
@@ -85,6 +85,106 @@ mod tests {
         assert_eq!(Some(tx1), CsvFormat.read_next(&mut buf, &mut pos)?);
         assert_eq!(Some(tx2), CsvFormat.read_next(&mut buf, &mut pos)?);
         assert_eq!(None, CsvFormat.read_next(&mut buf, &mut pos)?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_fail_tx_type() -> Result<(), CodecError> {
+        let mut buf = Cursor::new(Vec::new());
+        writeln!(buf, "1000000000000007,TRANSFERR,9223372036854775807,7524637015105340931,800,1633037280000,PENDING,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s.contains("TRANSFERR")
+        ));
+        
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "1000000000000007,transfer,9223372036854775807,7524637015105340931,800,1633037280000,PENDING,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s.contains("transfer")
+        ));
+        
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "1000000000000007,9223372036854775807,7524637015105340931,800,1633037280000,PENDING,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(_))
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_fail_status() -> Result<(), CodecError> {
+        let mut buf = Cursor::new(Vec::new());
+        writeln!(buf, "1000000000000007,TRANSFER,9223372036854775807,7524637015105340931,800,1633037280000,PENDIN,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s.contains("PENDIN")
+        ));
+
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "1000000000000007,TRANSFER,9223372036854775807,7524637015105340931,800,1633037280000,pending,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s.contains("pending")
+        ));
+
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "1000000000000007,TRANSFER,9223372036854775807,7524637015105340931,800,1633037280000,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(_))
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_fail_integer() -> Result<(), CodecError> {
+        let mut buf = Cursor::new(Vec::new());
+        writeln!(buf, "1000000000000007,TRANSFER,9223372036854775807,7524637015105340931,800.1,1633037280000,PENDING,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(_))
+        ));
+
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "1000000000000007,TRANSFER,9223372036854775807,7524637015105340931,\"800\",1633037280000,PENDING,\"Record number 8\"")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            CsvFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(_))
+        ));
 
         Ok(())
     }

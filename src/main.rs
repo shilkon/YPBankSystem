@@ -1,49 +1,66 @@
-use std::{env, fs::File, io::{BufWriter, Write}, path::Path};
+use std::{fs::File, io::{BufRead, BufReader, Write}};
+
+use clap::{Parser, ValueEnum};
 
 use anyhow::Context;
 use parser::{Format, CsvFormat, TxtFormat, BinFormat, TransactionReader, TransactionWriter};
 
-fn main() -> anyhow::Result<()> {
-    let args: Vec<String> = env::args().skip(1).collect();
+#[derive(Parser)]
+struct CliArgs {
+    input: Option<String>,
 
-    if args.len() != 2 {
-        anyhow::bail!("Usage: converter <input_file> <output_file>");
+    #[arg(long, value_enum)]
+    in_format: DataFormat,
+
+    #[arg(long, value_enum)]
+    out_format: DataFormat,
+}
+
+#[derive(Clone, ValueEnum)]
+enum DataFormat {
+    Csv,
+    Txt,
+    Bin,
+}
+
+fn match_format(format: DataFormat) -> Format {
+    match format {
+        DataFormat::Csv => Format::Csv(CsvFormat),
+        DataFormat::Txt => Format::Txt(TxtFormat),
+        DataFormat::Bin => Format::Bin(BinFormat),
     }
+}
 
-    let match_format = |path: &Path| match path.extension().and_then(|s| s.to_str()) {
-        Some("csv") => Ok(Format::Csv(CsvFormat)),
-        Some("txt") => Ok(Format::Txt(TxtFormat)),
-        Some("bin") => Ok(Format::Bin(BinFormat)),
-        _ => Err(anyhow::anyhow!("Unsupported file format: '{}'", path.display())),
-    };
+fn open_input(path: &Option<String>) -> Result<Box<dyn BufRead>, std::io::Error> {
+    match path {
+        Some(p) => Ok(Box::new(BufReader::new(File::open(p)?))),
+        None => Ok(Box::new(BufReader::new(std::io::stdin()))),
+    }
+}
 
-    let input_file_path = Path::new(&args[0]);
-    let tx_reader = match_format(input_file_path)?;
+fn main() -> anyhow::Result<()> {
+    let args = CliArgs::parse();
 
-    let output_file_path = Path::new(&args[1]);
-    let tx_writer = match_format(output_file_path)?;
+    let mut input = open_input(&args.input)
+        .context(format!("Failed to open input file '{}'", args.input.as_deref().unwrap_or("stdin")))?;
+    let tx_reader = match_format(args.in_format);
 
-    let input_file = File::open(input_file_path)
-        .context(format!("Failed to open input file '{}'", input_file_path.display()))?;
+    let mut output = std::io::stdout();
+    let tx_writer = match_format(args.out_format);
 
-    let output_file = File::create(output_file_path)
-        .context(format!("Failed to create output file '{}'", output_file_path.display()))?;
-
-    let mut buf_reader = std::io::BufReader::new(input_file);
     let mut position: usize = 0;
-    if tx_reader.read_header(&mut buf_reader, &mut position)
-        .context(format!("Failed to read header from '{}'", input_file_path.display()))?.is_none() {
+    if tx_reader.read_header(&mut *input, &mut position)
+        .context(format!("Failed to read header from input'{}'", args.input.as_deref().unwrap_or("stdin")))?
+        .is_none() {
         return Ok(())
     }
     
-    let mut buf_writer = BufWriter::new(output_file);
-    tx_writer.write_header(&mut buf_writer)
-        .context(format!("Failed to write header to '{}'", output_file_path.display()))?;
+    tx_writer.write_header(&mut output).context("Failed to write header to stdout")?;
 
-    while let Some(tx_record) = tx_reader.read_next(&mut buf_reader, &mut position).transpose() {
+    while let Some(tx_record) = tx_reader.read_next(&mut input, &mut position).transpose() {
         match tx_record {
             Ok(tx) => {
-                if let Err(e) = tx_writer.write_record(&mut buf_writer, &tx) {
+                if let Err(e) = tx_writer.write_record(&mut output, &tx) {
                     anyhow::bail!("Failed to write transaction:\n{tx}\nError: {e}")
                 }
             }
@@ -51,7 +68,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    buf_writer.flush()?;
+    output.flush()?;
 
     Ok(())
 }

@@ -25,20 +25,14 @@ fn main() -> anyhow::Result<()> {
     let second_file_path = Path::new(second_file_name);
     let second_tx_reader = match_format(second_file_path)?;
 
-    let first_file = File::open(first_file_path)
-        .context(format!("Failed to open file '{}'", first_file_path.display()))?;
-
-    let second_file = File::open(second_file_path)
-        .context(format!("Failed to open file '{}'", second_file_path.display()))?;
-
-    let mut first_buf_reader = std::io::BufReader::new(first_file);
+    let mut first_buf_reader = std::io::BufReader::new(File::open(first_file_path)?);
     let mut first_position: usize = 0;
     if first_tx_reader.read_header(&mut first_buf_reader, &mut first_position)
         .context(format!("Failed to read header from '{}'", first_file_path.display()))?.is_none() {
         return Ok(())
     }
 
-    let mut second_buf_reader = std::io::BufReader::new(second_file);
+    let mut second_buf_reader = std::io::BufReader::new(File::open(second_file_path)?);
     let mut second_position: usize = 0;
     if second_tx_reader.read_header(&mut second_buf_reader, &mut second_position)
         .context(format!("Failed to read header from '{}'", second_file_path.display()))?.is_none() {

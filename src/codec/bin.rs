@@ -106,7 +106,7 @@ impl TransactionWriter for BinFormat {
 }
 
 impl TransactionReader for BinFormat {
-    fn read_next<R: std::io::BufRead>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError> {
+    fn read_next<R: std::io::BufRead + ?Sized>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError> {
         let buf_check = r.fill_buf()?;
         if buf_check.is_empty() {
             return Ok(None)

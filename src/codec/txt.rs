@@ -13,7 +13,7 @@ pub struct TxtFormat;
 
 fn parse_field<T: std::str::FromStr>(map: &HashMap<String, String>, key: &str) -> Result<T, CodecError> {
     let value = map.get(key)
-        .ok_or_else(|| CodecError::Format(format!("Missing field: {}", key)))?;
+        .ok_or_else(|| CodecError::Format(format!("Missing field: '{}'", key)))?;
     value.parse()
         .map_err(|_| CodecError::Format(format!("Invalid field '{}': '{}'", key, value)))
 }
@@ -45,7 +45,7 @@ impl TransactionWriter for TxtFormat {
 }
 
 impl TransactionReader for TxtFormat {
-    fn read_next<R: std::io::BufRead>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError> {
+    fn read_next<R: std::io::BufRead + ?Sized>(&self, r: &mut R, pos: &mut usize) -> Result<Option<Transaction>, CodecError> {
         let mut line = String::new();
         let mut clean_line = line.trim();
         while clean_line.is_empty() || clean_line.starts_with('#') {
@@ -117,6 +117,183 @@ mod tests {
         assert_eq!(Some(tx1), TxtFormat.read_next(&mut buf, &mut pos)?);
         assert_eq!(Some(tx2), TxtFormat.read_next(&mut buf, &mut pos)?);
         assert_eq!(None, TxtFormat.read_next(&mut buf, &mut pos)?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_fail_tx_type() -> Result<(), CodecError> {
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TX_TYPE: DEPOSITT\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0\n \
+                          TIMESTAMP: 1633036860000\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n \
+                          STATUS: FAILURE\n";
+        
+        let mut buf = Cursor::new(Vec::new());
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Invalid field 'TX_TYPE': 'DEPOSITT'"
+        ));
+
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TX_TYPE: deposit\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0\n \
+                          TIMESTAMP: 1633036860000\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n \
+                          STATUS: FAILURE\n";
+        
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Invalid field 'TX_TYPE': 'deposit'"
+        ));
+
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0\n \
+                          TIMESTAMP: 1633036860000\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n \
+                          STATUS: FAILURE\n";
+        
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Missing field: 'TX_TYPE'"
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_fail_status() -> Result<(), CodecError> {
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TX_TYPE: DEPOSIT\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0\n \
+                          TIMESTAMP: 1633036860000\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n \
+                          STATUS: failure\n";
+        
+        let mut buf = Cursor::new(Vec::new());
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Invalid field 'STATUS': 'failure'"
+        ));
+
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TX_TYPE: DEPOSIT\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0\n \
+                          TIMESTAMP: 1633036860000\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n \
+                          STATUS: FAIL\n";
+        
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Invalid field 'STATUS': 'FAIL'"
+        ));
+
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TX_TYPE: DEPOSIT\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0\n \
+                          TIMESTAMP: 1633036860000\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n";
+        
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Missing field: 'STATUS'"
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn read_fail_integer() -> Result<(), CodecError> {
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TX_TYPE: DEPOSIT\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0.2\n \
+                          TIMESTAMP: 1633036860000\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n \
+                          STATUS: FAILURE\n";
+        
+        let mut buf = Cursor::new(Vec::new());
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Invalid field 'FROM_USER_ID': '0.2'"
+        ));
+
+        let data = "# Record 1 (DEPOSIT)\n \
+                          TX_TYPE: DEPOSIT\n \
+                          TO_USER_ID: 9223372036854775807\n \
+                          FROM_USER_ID: 0\n \
+                          TIMESTAMP: \"1633036860000\"\n \
+                          DESCRIPTION: \"Record number 1\"\n \
+                          TX_ID: 1000000000000000\n \
+                          AMOUNT: 100\n";
+        
+        buf.get_mut().clear();
+        buf.set_position(0);
+        writeln!(buf, "{data}")?;
+        buf.set_position(0);
+        let mut pos = 0;
+        
+        assert!(matches!(
+            TxtFormat.read_next(&mut buf, &mut pos),
+            Err(CodecError::Format(ref s)) if s == "Invalid field 'TIMESTAMP': '\"1633036860000\"'"
+        ));
 
         Ok(())
     }
